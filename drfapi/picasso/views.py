@@ -3,6 +3,8 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
+from .tasks import upload_file
+
 from .models import File
 from .serializers import FileSerializer
 
@@ -19,7 +21,8 @@ class FileUploadView(CreateAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.file_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            file = serializer.save()
+            upload_file.delay(file.id)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors,
